@@ -20,7 +20,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import life.genny.qwanda.entity.BaseEntity;
 
-public class SomeDatabaseServiceImpl implements SomeDatabaseService{
+public class KieServiceImpl implements KieService{
 
 	@Override
 	public void save(Handler<AsyncResult<JsonObject>> result) {

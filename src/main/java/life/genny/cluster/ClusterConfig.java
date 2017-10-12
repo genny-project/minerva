@@ -19,7 +19,7 @@ public class ClusterConfig {
 			
 	private static String privateIP = System.getenv("MYIP");
 	private final static int portHazelcastCluster = 5704;
-	private final static int portEBCluster = 15704;
+	private final static int portEBCluster = 15701;
 
 	/**
 	 * @param toClientOutbount the toClientOutbount to set
@@ -48,7 +48,8 @@ public class ClusterConfig {
 	 * @param toClientOutbount the toClientOutbount to set
 	 */
 	public static VertxOptions configCluster() {
-		ClusterManager mgr = new HazelcastClusterManager(configHazelcastCluster());
+//		ClusterManager mgr = new HazelcastClusterManager(configHazelcastCluster());
+		ClusterManager mgr = new HazelcastClusterManager();
 		VertxOptions options = new VertxOptions();
 		options.setClusterManager(mgr);
 		options.setEventBusOptions(configEBCluster());

@@ -12,14 +12,14 @@ import io.vertx.core.json.JsonObject;
 
 @VertxGen
 @ProxyGen
-public interface SomeDatabaseService {
+public interface KieService {
 	// A couple of factory methods to create an instance and a proxy
-	static SomeDatabaseService create(Object vertx) {
-		return new SomeDatabaseServiceImpl();
+	static KieService create(Object vertx) {
+		return new KieServiceImpl();
 	}
 
-	static SomeDatabaseService createProxy(Vertx vertx, String address) {
-		return new SomeDatabaseServiceVertxEBProxy(vertx, address);
+	static KieService createProxy(Vertx vertx, String address) {
+		return new KieServiceVertxEBProxy(vertx, address);
 	}
 	// service operations here...
 

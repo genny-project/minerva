@@ -8,8 +8,60 @@
 	<dependencies>
 		<dependency>
 			<groupId>life.genny</groupId>
+			<artifactId>qwanda-utils</artifactId>
+			<version>0.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-json -->
+		<dependency>
+			<groupId>com.google.api-client</groupId>
+			<artifactId>google-api-client</artifactId>
+			<version>1.22.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.oauth-client</groupId>
+			<artifactId>google-oauth-client-jetty</artifactId>
+			<version>1.22.0</version>
+		</dependency> 
+		<dependency>
+			<groupId>com.google.apis</groupId>
+			<artifactId>google-api-services-sheets</artifactId>
+			<version>v4-rev473-1.22.0</version>
+		</dependency>	
+		<dependency>
+			<groupId>org.janusgraph</groupId>
+			<artifactId>janusgraph-core</artifactId>
+			<version>0.1.1</version>
+		</dependency>
+		<!-- <dependency> <groupId>org.apache.cassandra</groupId> <artifactId>cassandra-all</artifactId> 
+			<version>2.1.9</version> defined as 2.1.9 </dependency> -->
+		<dependency>
+			<groupId>org.janusgraph</groupId>
+			<artifactId>janusgraph-cassandra</artifactId>
+			<version>0.1.1</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>netty-all</artifactId>
+					<groupId>io.netty</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.janusgraph</groupId>
+			<artifactId>janusgraph-es</artifactId>
+			<version>0.1.1</version>
+		</dependency>
+		<!--<dependency> <groupId>org.janusgraph</groupId> <artifactId>janusgraph-all</artifactId> 
+			<version>0.1.1</version> </dependency> https://mvnrepository.com/artifact/org.janusgraph/janusgraph 
+			<dependency> <groupId>org.janusgraph</groupId> <artifactId>janusgraph</artifactId> 
+			<version>0.1.1</version> <type>pom</type> </dependency> -->
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+		<!-- <dependency> <groupId>com.fasterxml.jackson.core</groupId> <artifactId>jackson-databind</artifactId> 
+			<version>2.9.1</version> </dependency> -->
+		<dependency>
+			<groupId>life.genny</groupId>
 			<artifactId>qwanda</artifactId>
-			<version>0.5.2</version>
+			<version>0.5.3</version>
+			<scope>compile</scope>
 			<exclusions>
 				<exclusion>
 					<artifactId>jackson-annotations</artifactId>
@@ -102,13 +154,11 @@
 						<target>1.8</target>
 						<annotationProcessors>
 							<annotationProcessor>io.vertx.codegen.CodeGenProcessor</annotationProcessor>
-						</annotationProcessors> 
-						<!-- <generatedSourcesDirectory>
-							${project.basedir}/src/main/generated
-						</generatedSourcesDirectory> -->
-						<!-- <compilerArgs>
-							<arg>-AoutputDirectory=${project.basedir}/src/main</arg>
-						</compilerArgs> -->
+						</annotationProcessors>
+						<!-- <generatedSourcesDirectory> ${project.basedir}/src/main/generated 
+							</generatedSourcesDirectory> -->
+						<!-- <compilerArgs> <arg>-AoutputDirectory=${project.basedir}/src/main</arg> 
+							</compilerArgs> -->
 						<debuglevel>lines,vars,source</debuglevel>
 					</configuration>
 				</plugin>
@@ -123,28 +173,13 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.6</version>
-				<executions>
-					<execution>
-						<id>unpack-dependencies</id>
-						<phase>package</phase>
-						<goals>
-							<goal>unpack-dependencies</goal>
-						</goals>
-						<configuration>
-							<excludeScope>system</excludeScope>
-							<excludes>META-INF/*.SF</excludes>
-							<excludes>META-INF/*.DSA</excludes>
-							<excludes>META-INF/*.RSA</excludes>
-							<excludeGroupIds>junit,org.mockito,org.hamcrest</excludeGroupIds>
-							<outputDirectory>${project.build.directory}/classes</outputDirectory>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-dependency-plugin</artifactId> 
+				<version>2.6</version> <executions> <execution> <id>unpack-dependencies</id> 
+				<phase>package</phase> <goals> <goal>unpack-dependencies</goal> </goals> 
+				<configuration> <excludeScope>system</excludeScope> <excludes>META-INF/*.SF</excludes> 
+				<excludes>META-INF/*.DSA</excludes> <excludes>META-INF/*.RSA</excludes> <excludeGroupIds>junit,org.mockito,org.hamcrest</excludeGroupIds> 
+				<outputDirectory>${project.build.directory}/classes</outputDirectory> </configuration> 
+				</execution> </executions> </plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>

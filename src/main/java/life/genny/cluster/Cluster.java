@@ -5,18 +5,24 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.serviceproxy.ProxyHelper;
-import life.genny.service.SomeDatabaseService;
-import life.genny.service.SomeDatabaseServiceImpl;
+import life.genny.service.KieService;
+import life.genny.service.KieServiceImpl;
+import life.genny.service.QwandaService;
+import life.genny.service.QwandaServiceImpl;
 
 public class Cluster {
-	static SomeDatabaseService service = new SomeDatabaseServiceImpl();
+	static KieService kieService = new KieServiceImpl();
+	static QwandaService qwandaService = new QwandaServiceImpl();
+	
 	static Handler<AsyncResult<Vertx>> registerAllChannels = vertx -> {
 //		EventBus eb = vertx.result();
 //		EBConsumers.registerAllConsumer(eb);
 //		EBProducers.registerAllProducers(eb);
 //		EBCHandlers.registerHandlers();
-		ProxyHelper.registerService(SomeDatabaseService.class, vertx.result(), service,
-			    "database-service-address");
+		ProxyHelper.registerService(KieService.class, vertx.result(), kieService,
+			    "kie-service-address");
+		ProxyHelper.registerService(QwandaService.class, vertx.result(), qwandaService,
+			    "qwanda-service-address");
 	};
 
 	public static Future<Void> joinCluster(Vertx vertx) {
