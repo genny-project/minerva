@@ -2,12 +2,8 @@ FROM openjdk:8u131-jre-alpine
 RUN apk update && apk add jq && apk add bash
 
 ADD target/minerva-0.0.1-SNAPSHOT-fat.jar /service.jar
-#ADD cluster.xml /cluster.xml
 
-RUN mkdir /realm
-ADD realm /opt/realm
 ADD docker-entrypoint.sh /docker-entrypoint.sh
-ADD StoredCredential /root/.credentials/sheets.googleapis.com-java-quickstart/StoredCredential
 
 
 WORKDIR /

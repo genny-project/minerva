@@ -18,11 +18,11 @@ public class QwandaServiceImpl implements QwandaService {
   @Override
   public void getEntityAttr(Handler<AsyncResult<JsonObject>> result) {
     // TODO Auto-generated method stub
-    WorkItemInstance process = KieClient.getKieClient().processServicesClient
-        .getWorkItem(containerId, processInstanceId, id);
-    JsonObject obj = JsonObject.mapFrom(process);
-    result.handle(Future.succeededFuture(obj));
-    System.out.println("Done getProcessDefinition!");
+//    WorkItemInstance process = KieClient.getKieClient().processServicesClient
+//        .getWorkItem(containerId, processInstanceId, id);
+//    JsonObject obj = JsonObject.mapFrom(process);
+//    result.handle(Future.succeededFuture(obj));
+//    System.out.println("Done getProcessDefinition!");
   }
 
 }

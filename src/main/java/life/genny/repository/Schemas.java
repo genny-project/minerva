@@ -2,10 +2,22 @@ package life.genny.repository;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+// import javax.validation.Validation;
 import org.apache.tinkerpop.gremlin.process.traversal.Order;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversal;
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource;
@@ -30,32 +42,294 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+// import com.sun.prism.PixelFormat.DataType;
 import groovy.json.JsonOutput;
 import io.vertx.core.json.JsonObject;
+import life.genny.qwanda.entity.BaseEntity;
+import life.genny.qwanda.entity.EntityEntity;
+import life.genny.qwanda.entity.EntityEntityId;
+import life.genny.qwanda.validation.Validation;
 import org.apache.tinkerpop.gremlin.process.computer.traversal.step.VertexComputing;
 import org.apache.tinkerpop.gremlin.process.traversal.step.*;
 import static org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__.*;
 // import com.google.gson.JsonElement;
+import life.genny.qwanda.*;
+import life.genny.qwanda.attribute.Attribute;
+import life.genny.qwanda.attribute.EntityAttribute;
+import life.genny.qwanda.datatype.DataType;
 import static java.lang.System.out;
 
 public class Schemas {
 
-  public static void main(String... strings) throws IOException {
-    
-    DataService service = new DataService();
-    service.findEntityWithAttr("PER_USER1").forEach(out::println);;
-    
-    
+  private final static String GET = "get";
 
-//     loadSimpleData();
-//    JanusClient graphClient = JanusClient.getJanusClient();
-//    JanusGraph graph = graphClient.getGraph();
-//    GraphTraversalSource traverser = graph.traversal();
-//
-//    List<Vertex> baseAttributes = traverser.V().has("code", "PER_USER1").as("person1")
-//        .valueMap(true).select("person1").out("EntityAttribute").toList();;
-        
+  public static Map<Object, Field> classFields(Field[] classFields) {
+    return Stream.of(classFields).collect(Collectors.toMap(
+        f -> GET + f.getName().substring(0, 1).toUpperCase() + f.getName().substring(1), f -> f));
+  }
+
+  // public static Map<Object, Object> cla(Field[] classFields) {
+  // return Stream.of(classFields)
+  // .collect(Collectors.toMap(f -> GET + f.getType() + f.getName().substring(1), f -> f));
+  // }
+
+  public static Map<Object, Object> classMethods(Method[] classMethods) {
+    return Stream.of(classMethods).map(s -> s.getName().toString()).distinct()
+        .collect(Collectors.toMap(m -> m, m -> m));
+  }
+
+  // .collect(Collectors.toMap(k -> k.getKey(), f -> {
+  // String plo =classFromGenerics(f.getValue(), packageName) ==null?classFromGenerics(f.getValue(),
+  // packageName):f.getValue().getType().getName();
+  //
+  // return plo;
+  // }
+  public static Map<Object, Class> beanFields(Class objectType, String packageName) {
+    return classFields(objectType.getDeclaredFields()).entrySet().stream()
+        .filter(entry -> (classMethods(objectType.getMethods()).get(entry.getKey()) != null)
+            && (genericParameters(entry.getValue(), packageName) != null)
+            || entry.getValue().getType().getName().contains(packageName))
+        .collect(Collectors.toMap(k -> k.getKey(),
+            f -> genericParameters(f.getValue(), packageName) == null ? f.getValue().getType()
+                : genericParameters(f.getValue(), packageName)));
+  }
+
+  public static Class genericParameters(Field field, String packageName) {
+    try {
+      ParameterizedType typeFromGenerics = (ParameterizedType) field.getGenericType();
+      Class<?> classType = (Class<?>) typeFromGenerics.getActualTypeArguments()[0];
+      if (classType.getPackage().getName().contains(packageName)) {
+        // return true;
+        // System.out.println(classType+"jskjksljldjskdj lsklds");
+        // return typeFromGenerics.getActualTypeArguments()[0].getTypeName();
+        return classType;
+      } else
+        // return false;
+        return null;
+    } catch (ClassCastException e) {
+      // Keep traversing
+      // return false;
+      return null;
+    }
+  }
+
+  // public static void runi() {
+  // beanFields(Attribute.class, "life.genny.qwanda").entrySet().forEach(data -> {
+  // // out.println(data.getValue());
+  // Class clazz;
+  // try {
+  // Class clazzy = Class.forName(data.getValue());
+  //
+  // // if (EntityEntity.class == clazzy)
+  // // out.println("yes");
+  // out.println(clazzy.getSimpleName());
+  // } catch (ClassNotFoundException e) {
+  // // TODO Auto-generated catch block
+  // e.printStackTrace();
+  // }
+  // });;
+  // }
+
+  // static Optional<Map<String, Object>> lok = null;
+
+  public static boolean run(Class clazz, Set<Class> clazzes) {
+    return beanFields(clazz, "life.genny.qwanda").entrySet().stream().map(map -> {
+      if (clazzes.contains(map.getValue())) {
+        out.println(clazz.getSimpleName() + "   " + map.getValue().getSimpleName() + " "
+            + clazzes.contains(map.getValue()));
+        return run(map.getValue(), clazzes);
+      } else
+        return false;
+    }).reduce((identity, accumulator) -> identity).get();
+  }
+
+  static Set<Class> s = new HashSet<>();
+  public static Integer tryTest(Class c, Set<Class> classes) {
+    Map<Object, Class> p = beanFields(c, "life.genny.qwanda");
+//    System.out.println(p.entrySet().stream().map(data -> 1)
+//        .reduce((identity, accumulator) -> identity + accumulator).get());
+    try{
+      return p.values().stream().distinct().map(data -> {
+//        if (classes.contains(data))
+        System.out.println(data.getSimpleName()+"-----------"+c.getSimpleName());
+        System.out.println(s.contains(data));
+        if (classes.contains(data))
+        { 
+          if(s.contains(data))
+          { 
+//            out.println(data.getSimpleName());
+            s = new HashSet<>();
+            return 0;
+          }
+          s.add(data);
+          return tryTest(data, classes) +1 ;
+        }
+        else
+          return 0;
+      }).reduce((identity, accumulator) -> identity + accumulator).get();
+    }catch(NoSuchElementException e) {
+      out.println("\n\n\n");
+      return 0;
+    }
     
+  }
+
+  public static void main(String... strings) throws IOException {
+
+//     Map<String, String> map = new HashMap<String, String>();
+    // map.put("key", "value");
+    // System.out.println(map.get("keyi"));
+
+    // classFields(Attribute.class.getDeclaredFields()).entrySet().stream().forEach(out::println);
+
+
+    // Set<String> listClasses = new HashSet<String>();
+    // System.out.println(listClasses.add("hola"));
+    // System.out.println(listClasses.remove("hola"));
+    // System.out.println(listClasses.add("hola"));
+    // System.out.println(listClasses.add("hola"));
+    Set<Class> classes = new HashSet<>();
+    classes.add(Validation.class);
+    classes.add(DataType.class);
+    classes.add(Attribute.class);
+    classes.add(BaseEntity.class);
+    classes.add(EntityAttribute.class);
+    classes.add(EntityEntity.class);
+    classes.add(Question.class);
+    classes.add(Ask.class);
+    classes.add(EntityEntityId.class);
+    // System.out.println(run(Validation.class, classes));
+
+
+//    beanFields(Attribute.class, "life.genny.qwanda").entrySet().forEach(out::println);;
+
+    
+//     Set<String> listClasses = new HashSet<String>();
+    
+    
+    
+//     classes.stream().forEach(data->{
+//     beanFields(data, "life.genny.qwanda").entrySet().stream().forEach(map -> {
+//    // listClasses.add(map.getValue());
+//     if(classes.contains(map.getValue()))
+//     beanFields(map.getValue(), "life.genny.qwanda");
+//    if(classes.contains(map.getValue()))
+//     out.println(data.getSimpleName()+" "+map.getValue().getSimpleName() +" "+classes.contains(map.getValue()));
+//     });
+//     });
+     
+    out.println(tryTest( EntityEntityId.class, classes));
+//     Map<String, Integer> ordered = new HashMap<String, Integer>();
+//     Map<String, Integer> ord= new HashMap<String, Integer>();
+//    classes.stream().peek(out::println).map(clazz->{
+////      System.out.println(tryTest( clazz, classes));
+//      ordered.put(clazz.getSimpleName(), tryTest( clazz, classes));
+//      return tryTest( clazz, classes);
+//    }).peek(out::println).sorted().forEach(p->p.intValue());;
+//    
+//    List<String> cs = new ArrayList<>();
+//    List<Integer> c = new ArrayList<>();
+//    ordered.entrySet().stream().sorted(Map.Entry.comparingByValue()).forEach(out::println);
+//    System.out.println(ordered);
+//    
+    
+//    ordered.values().stream().sorted().forEach(out::println);
+    
+//    System.out.println(tryTest( Ask.class, classes));
+    // listClasses.forEach(out::println);
+    // beanFields(Attribute.class, "life.genny.qwanda").entrySet().stream().forEach(out::println);
+    // runi();
+
+    // List<Class> classes = new ArrayList<>();
+    // classes.add(Validation.class);
+    // classes.add(DataType.class);
+    // classes.add(Attribute.class);
+    // classes.add(BaseEntity.class);
+    // classes.add(EntityAttribute.class);
+    // classes.add(EntityEntity.class);
+    // classes.add(Question.class);
+    // classes.add(Ask.class);
+    //
+    // Map<String,Object> mp = new HashMap<String,Object>();
+    // List<Map<String, Object>> list = new ArrayList<Map<String,Object>>();
+    // List<String> list1 = new ArrayList<String>();
+    // classes.stream().forEach(clazz -> {
+    // beanFields(clazz, "life.genny.qwanda").entrySet().stream().forEach(data -> {
+    // try {
+    // Class clazzy = Class.forName(data.getValue());
+    //// System.out.println(clazz.getSimpleName()+" "+clazzy.getSimpleName());
+    //// if (mp.containsKey(o.getSimpleName())
+    //// && mp.get(o.getSimpleName()).equals(clazzy.getSimpleName()))
+    //// System.out.println("error");
+    //// else
+    //// mp.put(clazzy.getSimpleName(), o.getSimpleName());
+    // list1.add(clazz.getSimpleName()+"k");
+    // list1.add(clazzy.getSimpleName()+"v");
+    // } catch (ClassNotFoundException e) {
+    // e.printStackTrace();
+    // }
+    // });
+    // });
+    //
+    // list1.stream().sorted().distinct().forEach(out::println);
+    // Map<String,Object> mp = new HashMap<String,Object>();
+    // classes.stream().forEach(o->{
+    // beanFields(o, "life.genny.qwanda").entrySet().stream().distinct().map(data->{
+    // Class clazz;
+    // try {
+    // Class clazzy = Class.forName(data.getValue());
+    // if(mp.containsKey(o.getSimpleName())&&mp.get(o.getSimpleName()).equals(clazzy.getSimpleName()))
+    // System.out.println("error");
+    // else
+    // mp.put(clazzy.getSimpleName(),o.getSimpleName());
+    // } catch (ClassNotFoundException e) {
+    // e.printStackTrace();
+    // }
+    // System.out.println(mp);
+    // return mp;
+    // }).distinct().reduce((p,l)-> {p.putAll(l); return p;});
+    // });
+    // Map<String,Object> mpi = new HashMap<String,Object>();
+    // mpi.put("Validation", "dd");
+    // lok.get().putAll(mpi);
+    // System.out.println(mp);
+    // loadSimpleData();
+    // classFields(BaseEntity.class.getFields()).entrySet().forEach(out::println);
+    // out.println( beanFields(BaseEntity.class));
+    //
+    // out.println(beanFields(BaseEntity.class).get("getLinks"));
+    //
+    // out.println(classFields(BaseEntity.class.getFields()));
+
+    // out.print(BaseEntity.class.getDeclaredFields()[4]);
+    // System.out.println("fslkdfsj");
+    // classFromGenerics(Person.class.getDeclaredFields()[0], Person.class.getPackage().getName());
+    // ClassLoader l = null;
+
+
+
+    // DataService service = new DataService();
+    // service.findEntityWithAttr("PER_USER1").forEach(out::println);
+    // service.findEntityWithAttr("PER_USER1").entrySet().forEach(out::println);
+    // service.g.close();
+    // service.g.newTransaction();
+    // service.findE("PER_USER1").stream().forEach(out::println);
+    // service.findE("PER_USER1").stream().forEach(out::println);
+
+    // service.findM("PER_USER1");
+    // service.findM2("PER_USER3");
+    // service.findM("PER_USER1");
+    // service.findM("PER_USER1");
+    // service.findM2("PER_USER3");
+    // loadSimpleData();
+    // JanusClient graphClient = JanusClient.getJanusClient();
+    // JanusGraph graph = graphClient.getGraph();
+    // GraphTraversalSource traverser = graph.traversal();
+    //
+    // List<Vertex> baseAttributes = traverser.V().has("code", "PER_USER1").as("person1")
+    // .valueMap(true).select("person1").out("EntityAttribute").toList();;
+
+
     // traverser.V().has("code", "PER_USER1").as("person1")
     // .local(as("name", "code").select("code", "name").by("code").by("name"))
     // .out("EntityAttribute").as("tree").select("person1").by().toStream()
@@ -147,7 +421,7 @@ public class Schemas {
     // e.printStackTrace();
     // }
 
-//    graph.close();
+    // graph.close();
 
     // graph.traversal().V().filter(op ->
     // op.get().label().equals("BaseEntity")).toStream().forEach(out::println);;
@@ -190,10 +464,10 @@ public class Schemas {
     JanusGraphManagement mgmt = graph.openManagement();
 
     final PropertyKey code = mgmt.makePropertyKey("code").dataType(String.class).make();
-//    JanusGraphManagement.IndexBuilder nameIndexBuilder =
-//        mgmt.buildIndex("name", Vertex.class).addKey(code).unique();
-//    JanusGraphIndex namei = nameIndexBuilder.buildCompositeIndex();
-//    mgmt.setConsistency(namei, ConsistencyModifier.LOCK);
+    // JanusGraphManagement.IndexBuilder nameIndexBuilder =
+    // mgmt.buildIndex("name", Vertex.class).addKey(code).unique();
+    // JanusGraphIndex namei = nameIndexBuilder.buildCompositeIndex();
+    // mgmt.setConsistency(namei, ConsistencyModifier.LOCK);
 
     mgmt.makeVertexLabel("BaseEntity").make();
     mgmt.makeVertexLabel("Attribute").make();
@@ -205,7 +479,7 @@ public class Schemas {
 
     JanusGraphTransaction tx = graph.newTransaction();
 
-   
+
     Vertex person1 = tx.addVertex(T.label, "BaseEntity", "code", "PER_USER1", "name", "Person");
     Vertex nameAndres = tx.addVertex(T.label, "Attribute", "code", "PRI_FIRSTNAME1", "name",
         "First Name", "value", "Byron");
@@ -217,6 +491,48 @@ public class Schemas {
         "Nationality", "value", "Colombia");
     Vertex profession1 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION1", "name",
         "Profession", "value", "Software Developer");
+    Vertex profession2 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION2", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession3 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION3", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession4 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION4", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession5 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION5", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession6 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION6", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession7 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION7", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession8 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION8", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession9 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION9", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession10 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION10", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession11 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION11", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession12 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION12", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession13 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION13", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession14 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION14", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession15 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION15", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession16 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION16", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession17 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION17", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession18 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION18", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession19 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION19", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession20 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION20", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession21 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION21", "name",
+        "Profession", "value", "Software Developer");
+    Vertex profession22 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION22", "name",
+        "Profession", "value", "Software Developer");
 
     Vertex person2 = tx.addVertex(T.label, "BaseEntity", "code", "PER_USER2", "name", "Person");
     Vertex nameSudan = tx.addVertex(T.label, "Attribute", "code", "PRI_FIRSTNAME2", "name",
@@ -227,21 +543,48 @@ public class Schemas {
         tx.addVertex(T.label, "Attribute", "code", "PRI_AGE2", "name", "age", "value", 27);
     Vertex nationality2 = tx.addVertex(T.label, "Attribute", "code", "PRI_NATIONALITY2", "name",
         "Nationality", "value", "Nepal");
-    Vertex profession2 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION2", "name",
+    Vertex profession200 = tx.addVertex(T.label, "Attribute", "code", "PRI_PROFESSION200", "name",
         "Profession", "value", "Software Developer");
+
+    Vertex person3 = tx.addVertex(T.label, "BaseEntity", "code", "PER_USER3", "namwe", "Person",
+        "namfe", "Person", "namfse", "Person", "namae", "Person", "namde", "Person", "namsfse",
+        "Person", "namxe", "Person", "namse", "Person", "namfse", "Person", "namfe", "Person",
+        "namsfe", "Person", "nasfsme", "Person", "nameg", "Person", "namfse", "Person", "nafsme",
+        "Person", "namghe", "Person", "nasme", "Person", "namse", "Person", "namhe", "Person",
+        "namfse", "Person", "nafssme", "Person");
 
     person1.addEdge("EntityAttribute", nameAndres);
     person1.addEdge("EntityAttribute", nameByron);
     person1.addEdge("EntityAttribute", age127);
     person1.addEdge("EntityAttribute", nationality1);
-    person1.addEdge("EntityAttribute", profession1);
+    person1.addEdge("EntityAttribute", profession2);
+    person1.addEdge("EntityAttribute", profession3);
+    person1.addEdge("EntityAttribute", profession4);
+    person1.addEdge("EntityAttribute", profession5);
+    person1.addEdge("EntityAttribute", profession6);
+    person1.addEdge("EntityAttribute", profession7);
+    person1.addEdge("EntityAttribute", profession8);
+    person1.addEdge("EntityAttribute", profession9);
+    person1.addEdge("EntityAttribute", profession10);
+    person1.addEdge("EntityAttribute", profession11);
+    person1.addEdge("EntityAttribute", profession12);
+    person1.addEdge("EntityAttribute", profession13);
+    person1.addEdge("EntityAttribute", profession14);
+    person1.addEdge("EntityAttribute", profession15);
+    person1.addEdge("EntityAttribute", profession16);
+    person1.addEdge("EntityAttribute", profession17);
+    person1.addEdge("EntityAttribute", profession18);
+    person1.addEdge("EntityAttribute", profession19);
+    person1.addEdge("EntityAttribute", profession20);
+    person1.addEdge("EntityAttribute", profession21);
+    person1.addEdge("EntityAttribute", profession22);
 
     person2.addEdge("EntityAttribute", nameSudan);
     person2.addEdge("EntityAttribute", nameMachikna);
     person2.addEdge("EntityAttribute", age227);
     person2.addEdge("EntityAttribute", nationality2);
-    person2.addEdge("EntityAttribute", profession2);
-    
+    person2.addEdge("EntityAttribute", profession200);
+
     person1.addEdge("EntityEntity", person2, "relationship", "friend");
 
     tx.commit();

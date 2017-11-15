@@ -22,7 +22,7 @@ public interface KieService {
 		return new KieServiceVertxEBProxy(vertx, address);
 	}
 	// service operations here...
-
+	
 	void save(Handler<AsyncResult<JsonObject>> result);
 
 	void findActiveNodeInstances(String containerId, Long processInstanceId, int page, int pageSize,
@@ -61,5 +61,6 @@ public interface KieService {
 
 	void getWorkItemByProcessInstance(String containerId, Long processInstanceId,
 			Handler<AsyncResult<JsonArray>> result);
-
+	
+	void fireRule( JsonObject results);
 }
